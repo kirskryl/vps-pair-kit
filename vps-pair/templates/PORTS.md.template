@@ -1,0 +1,9 @@
+# Ports — fill under deployment lock
+
+| Host | Address | TCP port | Owner/unit | Public sources | State/date |
+|---|---|---|---|---|---|
+| HOME | 127.0.0.1 | 7890 or chosen | vps-pair-proxy | none | reserved |
+| EGRESS | assigned IPv4 | 8388 or chosen | vps-pair-proxy | HOME public /32 only | reserved |
+| both | management | chosen SSH | sshd | operator management source | verify |
+
+Before allocating selected port run `ss -H -ltn 'sport = :7890'` and `ss -H -lun 'sport = :7890'` on target host, substitute exact numeric port. Output must be empty, not merely exit 0. Existing listener on upgrade must belong to intended unit; never kill by port alone. Keep app/DB ports on loopback. TCP SS only; UDP and public mixed forbidden. Serialize allocation/deployment with host lock and recheck before bind. Record rollback firewall handles and recovery console before firewall/SSH edits.

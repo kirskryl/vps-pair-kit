@@ -1,0 +1,21 @@
+# INFRA_CANON
+
+Status: draft (active only after runtime acceptance). Date/owner: __FILL__.
+Never record passwords, tokens, private keys, SS keys or host keys here.
+
+| Role | Alias | OS / architecture | sing-box exact version/checksum | Recovery |
+|---|---|---|---|---|
+| HOME apps/data | pair-home | | | |
+| EGRESS transport only | pair-egress | | | |
+
+Path references only: private local `.env`; private generated generation; server `/etc/vps-pair/config.json` root:pairproxy 0640; mandatory `/etc/APP/{app,proxy}.env` root:root 0600.
+
+Route: native app → HOME mixed 127.0.0.1:PROXY_PORT → SS2022 TCP → EGRESS → internet. All proxied destinations use EGRESS; no HOME direct/fallback. Docker/UDP/TUN outside v1. Policy requires app proxy support; host-wide enforcement is not supplied. HOME loopback assumes trusted local users.
+
+| App | Unit | User | Loopback port | Data/quota | API/SDK proxy verified | One polling |
+|---|---|---|---|---|---|---|
+| | | | | | | |
+
+See PORTS.md. Record source allowlist, firewall change handles, config backup path, package rollback path, monitoring/retention, separate admin key paths (never contents), SSH recovery procedure.
+
+Acceptance date/results: config check both hosts; unit verify; exit IPv4 matches EGRESS; actual getMe; actual model request; EGRESS-down app failure; recovery; wrong-key refusal; foreign-source firewall refusal; public mixed refusal; restart; reboot. Do not mark active with missing results. Save sanitized PASS/FAIL only.

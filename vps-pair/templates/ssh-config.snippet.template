@@ -1,0 +1,18 @@
+# Prefer rendered ssh-config. Host keys provisioned only after local trusted verification.
+Host pair-home
+    HostName __HOME_IP__
+    User __HOME_ADMIN__
+    Port __HOME_SSH_PORT__
+    IdentityFile "__HOME_SSH_KEY__"
+    IdentitiesOnly yes
+    StrictHostKeyChecking yes
+    ForwardAgent no
+
+Host pair-egress
+    HostName __EGRESS_IP__
+    User __EGRESS_ADMIN__
+    Port __EGRESS_SSH_PORT__
+    IdentityFile "__EGRESS_SSH_KEY__"
+    IdentitiesOnly yes
+    StrictHostKeyChecking yes
+    ForwardAgent no

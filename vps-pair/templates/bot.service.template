@@ -1,0 +1,37 @@
+# Replace all placeholders; create data directory and mandatory env before verify/start.
+[Unit]
+Description=__BOT_NAME__ Telegram bot
+Wants=network-online.target
+After=network-online.target vps-pair-proxy.service
+Requires=vps-pair-proxy.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=__APP_USER__
+Group=__APP_USER__
+WorkingDirectory=/opt/__BOT_NAME__
+EnvironmentFile=/etc/__BOT_NAME__/proxy.env
+EnvironmentFile=/etc/__BOT_NAME__/app.env
+ExecStart=/opt/__BOT_NAME__/.venv/bin/python -m __PACKAGE__
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+AmbientCapabilities=
+ReadWritePaths=/opt/__BOT_NAME__/data
+Environment=PYTHONDONTWRITEBYTECODE=1
+
+[Install]
+WantedBy=multi-user.target
