@@ -78,7 +78,7 @@ def main():
     args = parser.parse_args()
     if Path(git('rev-parse', '--show-toplevel').stdout.strip()) != ROOT:
         raise ValueError('Ожидался checkout vps-pair-kit')
-    if git('branch', '--show-current').stdout.strip() != 'main':
+    if git('symbolic-ref', '--short', 'HEAD').stdout.strip() != 'main':
         raise ValueError('Автопубликация разрешена только из main')
     changes = changed_paths()
     unexpected = [path for _, path in changes if not skill_path(path)]
