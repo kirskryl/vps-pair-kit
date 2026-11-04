@@ -42,7 +42,7 @@ def init(root, open_editor=False):
         subprocess.run(argv + [str(path)], check=True, shell=False)
         private_file(path)
 
-def validate(root):
+def validate(root, allow_root=False):
     path = root / '.env'
     private_file(path)
     data = {}
@@ -64,7 +64,7 @@ def validate(root):
                 if addr.version != 4 or addr.is_unspecified or addr.is_loopback or addr.is_multicast:
                     raise ValueError()
             elif key.endswith('_ADMIN'):
-                if not re.fullmatch(r'[a-z_][a-z0-9_-]{0,31}', value) or value == 'root':
+                if not re.fullmatch(r'[a-z_][a-z0-9_-]{0,31}', value) or (value == 'root' and not allow_root):
                     raise ValueError()
             elif key.endswith('_PORT'):
                 if not re.fullmatch(r'[0-9]+', value) or not (1 if key.endswith('_SSH_PORT') else 1024) <= int(value) <= 65535:
@@ -80,7 +80,8 @@ def validate(root):
                     raise ValueError()
         except (ValueError, OSError, Invalid):
             errors.append(key)
-    if data.get('HOME_SSH_KEY') == data.get('EGRESS_SSH_KEY'):
+    if (data.get('HOME_SSH_KEY') == data.get('EGRESS_SSH_KEY')
+        and not (allow_root and data.get('HOME_ADMIN') == data.get('EGRESS_ADMIN') == 'root')):
         errors.extend(['HOME_SSH_KEY', 'EGRESS_SSH_KEY'])
     if data.get('HOME_IP') == data.get('EGRESS_IP'):
         errors.extend(['HOME_IP', 'EGRESS_IP'])
@@ -146,7 +147,7 @@ def render(root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['init','check','validate','render'])
+    parser.add_argument('command', choices=['init','status','check-bootstrap','check','validate','render'])
     parser.add_argument('--open', action='store_true', help='explicitly open local editor (init only)')
     args = parser.parse_args()
     try:
@@ -154,7 +155,25 @@ def main():
             raise Invalid('--open is init only')
         if args.command == 'init':
             init(ROOT, args.open)
-            print('Local .env ready; fill fields in your local editor. Values are never displayed.')
+            print('Local configuration file: ' + str((ROOT / '.env').resolve()))
+            print('Values are never displayed. Fill only missing fields in your local editor.')
+        elif args.command == 'status':
+            print('Local configuration file: ' + str(ROOT / '.env'))
+            if not (ROOT / '.env').exists():
+                print('Status: missing; run init.')
+            else:
+                try:
+                    validate(ROOT)
+                    print('Status: ready for render.')
+                except Invalid as error:
+                    try:
+                        validate(ROOT, allow_root=True)
+                        print('Status: ready for root-only administrator bootstrap; render is blocked until admins replace root.')
+                    except Invalid:
+                        print('Status: ' + str(error))
+        elif args.command == 'check-bootstrap':
+            validate(ROOT, allow_root=True)
+            print('Bootstrap validation passed. Rendering still requires non-root administrators.')
         elif args.command in ('check','validate'):
             validate(ROOT)
             print('Validation passed.')

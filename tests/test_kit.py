@@ -86,6 +86,16 @@ class KitTests(unittest.TestCase):
                 with self.assertRaises(kit.Invalid):
                     kit.validate(self.root)
 
+    def test_root_only_bootstrap_is_valid_but_cannot_render(self):
+        self.fill()
+        path = self.root / '.env'
+        path.write_text(path.read_text().replace('HOME_ADMIN=homeadmin', 'HOME_ADMIN=root').replace('EGRESS_ADMIN=egressadmin', 'EGRESS_ADMIN=root').replace(str(self.root/'egress.key'), str(self.root/'home.key')))
+        self.assertEqual(kit.validate(self.root, allow_root=True)['HOME_ADMIN'], 'root')
+        with self.assertRaises(kit.Invalid):
+            kit.validate(self.root)
+        with self.assertRaises(kit.Invalid):
+            kit.render(self.root)
+
     def test_reject_symlink_env_and_output(self):
         self.fill()
         p = self.root / '.env'
@@ -153,10 +163,20 @@ class KitTests(unittest.TestCase):
     def test_cli_smoke_outputs_no_values(self):
         shutil.copytree(ROOT/'scripts', self.root/'scripts')
         data = self.fill()
-        for cmd in ('check','validate','render'):
+        for cmd in ('status','check','validate','render'):
             result = subprocess.run([sys.executable, str(self.root/'scripts/kit.py'), cmd], text=True, capture_output=True)
             self.assertEqual(result.returncode, 0)
             self.assertFalse(data['SS2022_KEY'] in result.stdout + result.stderr)
+            self.assertFalse(data['HOME_IP'] in result.stdout + result.stderr)
+        p = self.root / '.env'
+        p.write_text(p.read_text().replace('HOME_ADMIN=homeadmin', 'HOME_ADMIN=root'))
+        bootstrap = subprocess.run([sys.executable, str(self.root/'scripts/kit.py'), 'check-bootstrap'], text=True, capture_output=True)
+        self.assertEqual(bootstrap.returncode, 0)
+        status = subprocess.run([sys.executable, str(self.root/'scripts/kit.py'), 'status'], text=True, capture_output=True)
+        self.assertIn('ready for root-only administrator bootstrap', status.stdout)
+        self.assertNotIn(data['SS2022_KEY'], status.stdout + status.stderr)
+        blocked = subprocess.run([sys.executable, str(self.root/'scripts/kit.py'), 'render'], text=True, capture_output=True)
+        self.assertNotEqual(blocked.returncode, 0)
         result = subprocess.run([sys.executable,str(self.root/'scripts/kit.py'),'check','--open'], text=True,capture_output=True)
         self.assertNotEqual(result.returncode,0)
         self.assertFalse(data['SS2022_KEY'] in result.stdout+result.stderr)
